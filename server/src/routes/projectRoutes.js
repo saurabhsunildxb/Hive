@@ -22,4 +22,22 @@ router.delete(
   deleteProject
 );
 
+// ─── Project-scoped Task routes ───────────────────────────────────────────────
+const {
+  createTask,
+  listProjectTasks,
+} = require('../controllers/taskController');
+
+router.post(
+  '/:projectId/tasks',
+  requireProjectAccess,
+  createTask
+);
+
+router.get(
+  '/:projectId/tasks',
+  requireProjectAccess,
+  listProjectTasks
+);
+
 module.exports = router;

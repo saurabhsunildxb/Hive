@@ -4,6 +4,7 @@ const express = require('express');
 const authRoutes = require('./src/routes/authRoutes');
 const workspaceRoutes = require('./src/routes/workspaceRoutes');
 const projectRoutes = require('./src/routes/projectRoutes');
+const taskRoutes = require('./src/routes/taskRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workspaces', workspaceRoutes);
 app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/tasks', taskRoutes);
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/v1/health', (_req, res) => {
