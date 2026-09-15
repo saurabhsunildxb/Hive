@@ -22,4 +22,22 @@ router.delete(
   deleteTask
 );
 
+// ─── Task-scoped Comment routes ───────────────────────────────────────────────
+const {
+  createComment,
+  listTaskComments,
+} = require('../controllers/commentController');
+
+router.post(
+  '/:taskId/comments',
+  requireTaskAccess,
+  createComment
+);
+
+router.get(
+  '/:taskId/comments',
+  requireTaskAccess,
+  listTaskComments
+);
+
 module.exports = router;

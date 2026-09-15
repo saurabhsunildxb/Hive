@@ -9,6 +9,7 @@
  */
 
 const prisma = require('../lib/prisma');
+const { createNotification, getNotificationTargets } = require('../utils/notificationUtils');
 
 const VALID_STATUSES = ['TODO', 'IN_PROGRESS', 'DONE'];
 const VALID_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
@@ -107,6 +108,17 @@ async function createTask(req, res) {
       },
     });
 
+    // Notify assignee if assigned
+    if (task.assigneeId) {
+      await createNotification({
+        userId: task.assigneeId,
+        type: 'TASK_ASSIGNED',
+        message: `You were assigned to task: ${task.title}`,
+        taskId: task.id,
+        actorId: req.user.id,
+      }).catch((err) => console.error('[taskController] Notification error:', err.message));
+    }
+
     return res.status(201).json({
       success: true,
       data: { task },
@@ -167,6 +179,7 @@ async function getTask(req, res) {
 // ─── PATCH /api/v1/tasks/:taskId ─────────────────────────────────────────────
 
 async function updateTask(req, res) {
+  const oldTask = req.task;
   const { title, description, status, priority, dueDate, assigneeId } = req.body;
 
   if (req.body.projectId !== undefined) {
@@ -281,6 +294,31 @@ async function updateTask(req, res) {
         assignee: SAFE_USER_SELECT,
       },
     });
+
+    // Handle TASK_ASSIGNED notification if assignee changed and is now non-null
+    if (updated.assigneeId && updated.assigneeId !== oldTask.assigneeId) {
+      await createNotification({
+        userId: updated.assigneeId,
+        type: 'TASK_ASSIGNED',
+        message: `You were assigned to task: ${updated.title}`,
+        taskId: updated.id,
+        actorId: req.user.id,
+      }).catch((err) => console.error('[taskController] Notification error:', err.message));
+    }
+
+    // Handle TASK_STATUS_CHANGED notification if status actually changed
+    if (updated.status !== oldTask.status) {
+      const targets = getNotificationTargets([oldTask.creatorId, updated.assigneeId], req.user.id);
+      for (const targetUserId of targets) {
+        await createNotification({
+          userId: targetUserId,
+          type: 'TASK_STATUS_CHANGED',
+          message: `Task status changed to ${updated.status}: ${updated.title}`,
+          taskId: updated.id,
+          actorId: req.user.id,
+        }).catch((err) => console.error('[taskController] Notification error:', err.message));
+      }
+    }
 
     return res.status(200).json({
       success: true,
