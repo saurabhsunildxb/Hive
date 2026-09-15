@@ -1,4 +1,5 @@
 require('dotenv').config();
+const http = require('http');
 const express = require('express');
 
 const authRoutes = require('./src/routes/authRoutes');
@@ -7,9 +8,13 @@ const projectRoutes = require('./src/routes/projectRoutes');
 const taskRoutes = require('./src/routes/taskRoutes');
 const commentRoutes = require('./src/routes/commentRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
+const { initSocket } = require('./src/socket');
 
 const app = express();
+const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+initSocket(httpServer);
 
 // ─── Body Parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -41,8 +46,10 @@ app.use((err, _req, res, _next) => {
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`Hive server running on port ${PORT}`);
-});
+if (require.main === module) {
+  httpServer.listen(PORT, () => {
+    console.log(`Hive server running on port ${PORT}`);
+  });
+}
 
 module.exports = app;

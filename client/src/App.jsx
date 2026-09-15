@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
 import AppLayout from './components/layout/AppLayout';
@@ -17,30 +18,32 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Public-only routes (redirect to /dashboard if logged in) */}
-          <Route element={<PublicOnlyRoute />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-          </Route>
-
-          {/* Root redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-          {/* Protected routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/workspaces" element={<WorkspacesPage />} />
-              <Route path="/workspaces/:workspaceId" element={<WorkspaceDetailsPage />} />
-              <Route path="/workspaces/:workspaceId/projects/:projectId" element={<ProjectPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
+        <SocketProvider>
+          <Routes>
+            {/* Public-only routes (redirect to /dashboard if logged in) */}
+            <Route element={<PublicOnlyRoute />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
             </Route>
-          </Route>
 
-          {/* Catch-all route */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+            {/* Root redirect */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+            {/* Protected routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/workspaces" element={<WorkspacesPage />} />
+                <Route path="/workspaces/:workspaceId" element={<WorkspaceDetailsPage />} />
+                <Route path="/workspaces/:workspaceId/projects/:projectId" element={<ProjectPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+              </Route>
+            </Route>
+
+            {/* Catch-all route */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </SocketProvider>
       </AuthProvider>
     </BrowserRouter>
   );
