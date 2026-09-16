@@ -69,12 +69,12 @@ export default function AddMemberModal({ isOpen, onClose, workspaceId, onAdded }
           helpText="User must already have an account on Hive."
         />
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-slate-700">Workspace Role</label>
+          <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Workspace Role</label>
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
             disabled={loading}
-            className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50"
+            className="w-full px-3.5 py-2 text-sm bg-white text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
           >
             <option value="MEMBER">MEMBER (Can view/edit tasks & projects)</option>
             <option value="ADMIN">ADMIN (Can manage projects & add/remove members)</option>

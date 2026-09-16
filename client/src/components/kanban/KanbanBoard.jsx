@@ -7,7 +7,7 @@ export default function KanbanBoard({ tasks = [], onSelectTask, onStatusChange }
   const doneTasks = tasks.filter((t) => t.status === 'DONE');
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start overflow-x-auto pb-4">
       <KanbanColumn
         title="Todo"
         status="TODO"
@@ -21,7 +21,7 @@ export default function KanbanBoard({ tasks = [], onSelectTask, onStatusChange }
         title="In Progress"
         status="IN_PROGRESS"
         tasks={inProgressTasks}
-        color="bg-indigo-100 text-indigo-700"
+        color="bg-indigo-100 text-indigo-700 border-indigo-200/60"
         onSelectTask={onSelectTask}
         onStatusChange={onStatusChange}
       />
@@ -30,7 +30,7 @@ export default function KanbanBoard({ tasks = [], onSelectTask, onStatusChange }
         title="Done"
         status="DONE"
         tasks={doneTasks}
-        color="bg-emerald-100 text-emerald-700"
+        color="bg-emerald-100 text-emerald-700 border-emerald-200/60"
         onSelectTask={onSelectTask}
         onStatusChange={onStatusChange}
       />

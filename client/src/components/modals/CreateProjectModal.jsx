@@ -67,14 +67,14 @@ export default function CreateProjectModal({ isOpen, onClose, workspaceId, onCre
           disabled={loading}
         />
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-slate-700">Description (Optional)</label>
+          <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Description (Optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief project goals and details..."
             rows={3}
             disabled={loading}
-            className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50"
+            className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50 placeholder:text-slate-400"
           />
         </div>
       </form>

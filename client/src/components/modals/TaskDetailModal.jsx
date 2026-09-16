@@ -6,6 +6,7 @@ import ErrorMessage from '../ui/ErrorMessage';
 import ConfirmModal from './ConfirmModal';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 export default function TaskDetailModal({
   isOpen,
@@ -18,6 +19,7 @@ export default function TaskDetailModal({
   registerCommentCallbacks,
 }) {
   const { user } = useAuth();
+  const { toast } = useToast();
   
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -63,10 +65,10 @@ export default function TaskDetailModal({
   useEffect(() => {
     if (registerCommentCallbacks) {
       registerCommentCallbacks({
-        onCreated: (newComment) => {
-          if (newComment.taskId !== task?.id) return;
+        onCreated: (newCommentData) => {
+          if (newCommentData.taskId !== task?.id) return;
           setComments((prev) =>
-            prev.some((c) => c.id === newComment.id) ? prev : [...prev, newComment]
+            prev.some((c) => c.id === newCommentData.id) ? prev : [...prev, newCommentData]
           );
         },
         onUpdated: (updatedComment) => {
@@ -100,7 +102,7 @@ export default function TaskDetailModal({
     try {
       const res = await api.post(
         `/tasks/${task.id}/comments`,
-        { content: newComment }
+        { content: newComment.trim() }
       );
 
       if (res.success && res.data?.comment) {
@@ -113,9 +115,10 @@ export default function TaskDetailModal({
         );
 
         setNewComment('');
+        toast.success('Comment added');
       }
     } catch (err) {
-      alert(err.message || 'Failed to add comment');
+      toast.error(err.message || 'Failed to add comment');
     } finally {
       setIsSubmitting(false);
     }
@@ -127,16 +130,17 @@ export default function TaskDetailModal({
 
     setIsEditing(true);
     try {
-      const res = await api.patch(`/comments/${editingCommentId}`, { content: editContent });
+      const res = await api.patch(`/comments/${editingCommentId}`, { content: editContent.trim() });
       if (res.success && res.data?.comment) {
         setComments((prev) =>
           prev.map((c) => (c.id === editingCommentId ? res.data.comment : c))
         );
         setEditingCommentId(null);
         setEditContent('');
+        toast.success('Comment updated');
       }
     } catch (err) {
-      alert(err.message || 'Failed to update comment');
+      toast.error(err.message || 'Failed to update comment');
     } finally {
       setIsEditing(false);
     }
@@ -150,9 +154,10 @@ export default function TaskDetailModal({
       if (res.success) {
         setComments((prev) => prev.filter((c) => c.id !== commentToDelete.id));
         setCommentToDelete(null);
+        toast.success('Comment deleted');
       }
     } catch (err) {
-      alert(err.message || 'Failed to delete comment');
+      toast.error(err.message || 'Failed to delete comment');
     } finally {
       setIsDeletingComment(false);
     }
@@ -163,16 +168,16 @@ export default function TaskDetailModal({
   const isOwnerOrAdmin = ['OWNER', 'ADMIN'].includes(userRole);
 
   const priorityColors = {
-    LOW: 'bg-blue-50 text-blue-700 border-blue-200',
-    MEDIUM: 'bg-slate-100 text-slate-700 border-slate-200',
-    HIGH: 'bg-amber-50 text-amber-700 border-amber-200',
-    URGENT: 'bg-rose-50 text-rose-700 border-rose-200',
+    LOW: 'bg-slate-100 text-slate-700 border-slate-200/90',
+    MEDIUM: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
+    HIGH: 'bg-amber-50 text-amber-800 border-amber-200/80',
+    URGENT: 'bg-rose-50 text-rose-700 border-rose-200/80',
   };
 
   const statusColors = {
-    TODO: 'bg-slate-100 text-slate-700',
-    IN_PROGRESS: 'bg-indigo-50 text-indigo-700',
-    DONE: 'bg-emerald-50 text-emerald-700',
+    TODO: 'bg-slate-100 text-slate-700 border-slate-200',
+    IN_PROGRESS: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    DONE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   };
 
   return (
@@ -180,7 +185,8 @@ export default function TaskDetailModal({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="Task Details"
+        title="Issue Detail"
+        className="max-w-2xl"
         footer={
           <div className="flex items-center justify-between w-full">
             <div>
@@ -215,41 +221,33 @@ export default function TaskDetailModal({
           </div>
         }
       >
-        <div className="space-y-6">
-          {/* Title & Badges */}
+        <div className="space-y-5">
+          {/* Header Badges & Title */}
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${statusColors[task.status] || ''}`}>
+              <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${statusColors[task.status] || ''}`}>
                 {task.status?.replace('_', ' ')}
               </span>
-              <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${priorityColors[task.priority] || ''}`}>
+              <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md border ${priorityColors[task.priority] || ''}`}>
                 {task.priority} PRIORITY
               </span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900">{task.title}</h2>
-          </div>
-
-          {/* Description */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Description</h4>
-            <p className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-3.5 rounded-lg border border-slate-200 min-h-16">
-              {task.description || <span className="italic text-slate-400">No description provided.</span>}
-            </p>
+            <h2 className="text-lg font-extrabold text-slate-900 tracking-tight leading-snug">{task.title}</h2>
           </div>
 
           {/* Quick Status Action */}
-          <div className="p-3.5 bg-indigo-50/50 rounded-xl border border-indigo-100 flex items-center justify-between gap-3">
-            <span className="text-xs font-medium text-slate-700">Quick Move:</span>
+          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Status:</span>
             <div className="flex items-center gap-1.5">
               {['TODO', 'IN_PROGRESS', 'DONE'].map((s) => (
                 <button
                   key={s}
                   disabled={task.status === s}
                   onClick={() => onStatusChange(task.id, s)}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                     task.status === s
-                      ? 'bg-indigo-600 text-white font-semibold'
-                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                      ? 'bg-slate-900 text-white font-bold shadow-2xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200/90 shadow-2xs'
                   }`}
                 >
                   {s.replace('_', ' ')}
@@ -258,71 +256,92 @@ export default function TaskDetailModal({
             </div>
           </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2 border-t border-slate-100">
-            <div>
-              <span className="text-slate-500 font-medium">Assignee:</span>
-              <p className="font-semibold text-slate-800 mt-0.5">
-                {task.assignee ? `${task.assignee.name} (${task.assignee.email})` : <span className="italic text-slate-400">Unassigned</span>}
+          {/* Description */}
+          <div>
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Description</h4>
+            <div className="text-xs sm:text-sm text-slate-700 whitespace-pre-wrap bg-slate-50/60 p-3.5 rounded-lg border border-slate-200/80 min-h-16 leading-relaxed">
+              {task.description || <span className="italic text-slate-400">No description provided.</span>}
+            </div>
+          </div>
+
+          {/* Metadata Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
+            <div className="bg-slate-50/60 p-2.5 rounded-lg border border-slate-200/60">
+              <span className="text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Assignee</span>
+              <p className="font-bold text-slate-800 mt-0.5 text-xs truncate">
+                {task.assignee ? `${task.assignee.name} (${task.assignee.email})` : <span className="italic text-slate-400 font-normal">Unassigned</span>}
               </p>
             </div>
-            <div>
-              <span className="text-slate-500 font-medium">Creator:</span>
-              <p className="font-semibold text-slate-800 mt-0.5">
+            <div className="bg-slate-50/60 p-2.5 rounded-lg border border-slate-200/60">
+              <span className="text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Creator</span>
+              <p className="font-bold text-slate-800 mt-0.5 text-xs truncate">
                 {task.creator ? `${task.creator.name} (${task.creator.email})` : 'System'}
               </p>
             </div>
-            <div>
-              <span className="text-slate-500 font-medium">Due Date:</span>
-              <p className="font-semibold text-slate-800 mt-0.5">
-                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+            <div className="bg-slate-50/60 p-2.5 rounded-lg border border-slate-200/60">
+              <span className="text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Due Date</span>
+              <p className="font-bold text-slate-800 mt-0.5 text-xs">
+                {task.dueDate ? new Date(task.dueDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) : <span className="italic text-slate-400 font-normal">No due date</span>}
               </p>
             </div>
-            <div>
-              <span className="text-slate-500 font-medium">Created / Updated:</span>
-              <p className="text-slate-600 mt-0.5">
-                {new Date(task.createdAt).toLocaleDateString()}
+            <div className="bg-slate-50/60 p-2.5 rounded-lg border border-slate-200/60">
+              <span className="text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Created</span>
+              <p className="font-bold text-slate-800 mt-0.5 text-xs">
+                {new Date(task.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
               </p>
             </div>
           </div>
 
           {/* Comments Section */}
-          <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-sm font-bold text-slate-800 mb-4">Comments</h4>
+          <div className="pt-4 border-t border-slate-200/80">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <span>Comments</span>
+                <span className="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-slate-100 text-slate-700">
+                  {comments.length}
+                </span>
+              </h4>
+            </div>
             
             {loadingComments ? (
-              <div className="flex justify-center py-4">
+              <div className="flex justify-center py-6">
                 <LoadingSpinner size="sm" />
               </div>
             ) : commentsError ? (
               <ErrorMessage message={commentsError} />
             ) : (
-              <div className="space-y-4 mb-4 max-h-75 overflow-y-auto pr-2">
+              <div className="space-y-3 mb-3 max-h-60 overflow-y-auto pr-1">
                 {comments.length === 0 ? (
-                  <p className="text-sm text-slate-500 italic">No comments yet. Be the first to comment!</p>
+                  <div className="p-5 text-center border border-dashed border-slate-200 rounded-lg bg-slate-50/50">
+                    <p className="text-xs text-slate-500 font-medium">No comments yet. Start the conversation!</p>
+                  </div>
                 ) : (
                   comments.map((comment) => (
-                    <div key={comment.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="text-xs font-semibold text-slate-800">
-                          {comment.user?.name || 'Unknown User'}
-                        </span>
+                    <div key={comment.id} className="bg-slate-50/70 p-3 rounded-lg border border-slate-200/80 shadow-2xs">
+                      <div className="flex justify-between items-center mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-500">
-                            {new Date(comment.createdAt).toLocaleString()}
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white font-bold flex items-center justify-center text-[9px] shrink-0">
+                            {comment.user?.name ? comment.user.name.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                          <span className="text-xs font-bold text-slate-900">
+                            {comment.user?.name || 'Unknown User'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            {new Date(comment.createdAt).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}
                             {comment.createdAt !== comment.updatedAt && ' (edited)'}
                           </span>
                           
-                          {/* Edit / Delete actions */}
                           {editingCommentId !== comment.id && (
-                            <div className="flex gap-1">
+                            <div className="flex items-center gap-1.5 ml-1">
                               {comment.userId === user?.id && (
                                 <button
                                   onClick={() => {
                                     setEditingCommentId(comment.id);
                                     setEditContent(comment.content);
                                   }}
-                                  className="text-[10px] text-indigo-600 hover:underline"
+                                  className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
                                 >
                                   Edit
                                 </button>
@@ -330,7 +349,7 @@ export default function TaskDetailModal({
                               {(comment.userId === user?.id || isOwnerOrAdmin) && (
                                 <button
                                   onClick={() => setCommentToDelete(comment)}
-                                  className="text-[10px] text-red-600 hover:underline ml-1"
+                                  className="text-[10px] font-semibold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer"
                                 >
                                   Delete
                                 </button>
@@ -345,11 +364,11 @@ export default function TaskDetailModal({
                           <textarea
                             value={editContent}
                             onChange={(e) => setEditContent(e.target.value)}
-                            className="w-full text-sm p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                            className="w-full text-xs p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none"
                             rows="2"
                             required
                           />
-                          <div className="flex justify-end gap-2 mt-2">
+                          <div className="flex justify-end gap-1.5 mt-1.5">
                             <Button
                               type="button"
                               variant="outline"
@@ -367,7 +386,7 @@ export default function TaskDetailModal({
                           </div>
                         </form>
                       ) : (
-                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{comment.content}</p>
+                        <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed pl-7">{comment.content}</p>
                       )}
                     </div>
                   ))
@@ -375,17 +394,17 @@ export default function TaskDetailModal({
               </div>
             )}
 
-            {/* Add Comment */}
-            <form onSubmit={handleAddComment} className="mt-4 flex gap-2">
+            {/* Add Comment Form */}
+            <form onSubmit={handleAddComment} className="mt-3 flex gap-2">
               <input
                 type="text"
                 placeholder="Write a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="flex-1 text-sm p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                className="flex-1 text-xs p-2 border border-slate-300/80 rounded-md shadow-2xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none transition-all"
                 required
               />
-              <Button type="submit" variant="primary" isLoading={isSubmitting}>
+              <Button type="submit" variant="primary" size="sm" isLoading={isSubmitting}>
                 Comment
               </Button>
             </form>

@@ -52,6 +52,8 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, members = 
     }
   };
 
+  const selectStyles = "w-full px-3.5 py-2 text-sm bg-white text-slate-900 border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed";
+
   return (
     <Modal
       isOpen={isOpen}
@@ -81,25 +83,25 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, members = 
         />
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-slate-700">Description (Optional)</label>
+          <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Description (Optional)</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Details, requirements, or links..."
             rows={3}
             disabled={loading}
-            className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50"
+            className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50 placeholder:text-slate-400"
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">Status</label>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               disabled={loading}
-              className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50"
+              className={selectStyles}
             >
               <option value="TODO">TODO</option>
               <option value="IN_PROGRESS">IN PROGRESS</option>
@@ -108,12 +110,12 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, members = 
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">Priority</label>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Priority</label>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               disabled={loading}
-              className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50"
+              className={selectStyles}
             >
               <option value="LOW">LOW</option>
               <option value="MEDIUM">MEDIUM</option>
@@ -133,12 +135,12 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, members = 
           />
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">Assignee (Optional)</label>
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-600">Assignee (Optional)</label>
             <select
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
               disabled={loading}
-              className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50"
+              className={selectStyles}
             >
               <option value="">Unassigned</option>
               {members.map((m) => (
