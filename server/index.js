@@ -1,4 +1,5 @@
 require('dotenv').config();
+const cors = require('cors');
 const http = require('http');
 const express = require('express');
 
@@ -20,6 +21,10 @@ app.set('io', io);
 // ─── Body Parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+  origin: process.env.CLIENT_ORIGIN,
+  credentials: true,
+}));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
