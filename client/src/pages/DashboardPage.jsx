@@ -109,7 +109,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Compact Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-xl p-5 sm:p-6 text-white shadow-2xs border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-linear-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-xl p-5 sm:p-6 text-white shadow-2xs border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
             Welcome back, {user?.name || 'User'} 👋
@@ -323,7 +323,7 @@ export default function DashboardPage() {
                 >
                   <div>
                     <div className="flex items-center justify-between mb-2.5">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-extrabold flex items-center justify-center text-base shadow-2xs group-hover:scale-105 transition-transform">
+                      <div className="w-9 h-9 rounded-lg bg-linear-to-tr from-indigo-600 to-violet-600 text-white font-extrabold flex items-center justify-center text-base shadow-2xs group-hover:scale-105 transition-transform">
                         {item.workspace.name.charAt(0).toUpperCase()}
                       </div>
                       <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-slate-100 text-slate-700 border border-slate-200/80">

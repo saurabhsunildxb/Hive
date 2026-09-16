@@ -82,7 +82,7 @@ export default function AppLayout() {
         {/* Brand Header */}
         <div className="h-14 flex items-center justify-between px-4 border-b border-slate-800/80 bg-slate-950/40">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-sm shadow-xs border border-indigo-400/20">
+            <div className="w-7 h-7 rounded-lg bg-linear-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-sm shadow-xs border border-indigo-400/20">
               H
             </div>
             <span className="font-bold text-base text-white tracking-tight">Hive</span>
@@ -132,7 +132,7 @@ export default function AppLayout() {
         <div className="p-3 border-t border-slate-800/80 bg-slate-950/60">
           <div className="flex items-center justify-between gap-2.5 p-1 rounded-lg hover:bg-slate-800/40 transition-colors">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white font-bold flex items-center justify-center text-[11px] shrink-0 shadow-2xs border border-white/20">
+              <div className="w-7 h-7 rounded-full bg-linear-to-tr from-indigo-500 to-purple-500 text-white font-bold flex items-center justify-center text-[11px] shrink-0 shadow-2xs border border-white/20">
                 {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
               </div>
               <div className="min-w-0 flex-1">
