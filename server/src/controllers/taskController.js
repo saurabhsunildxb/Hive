@@ -116,7 +116,12 @@ async function createTask(req, res) {
         message: `You were assigned to task: ${task.title}`,
         taskId: task.id,
         actorId: req.user.id,
-      }).catch((err) => console.error('[taskController] Notification error:', err.message));
+      }, req.app.get('io')).catch((err) => console.error('[taskController] Notification error:', err.message));
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`project:${projectId}`).emit('task:created', task);
     }
 
     return res.status(201).json({
@@ -303,7 +308,7 @@ async function updateTask(req, res) {
         message: `You were assigned to task: ${updated.title}`,
         taskId: updated.id,
         actorId: req.user.id,
-      }).catch((err) => console.error('[taskController] Notification error:', err.message));
+      }, req.app.get('io')).catch((err) => console.error('[taskController] Notification error:', err.message));
     }
 
     // Handle TASK_STATUS_CHANGED notification if status actually changed
@@ -316,8 +321,13 @@ async function updateTask(req, res) {
           message: `Task status changed to ${updated.status}: ${updated.title}`,
           taskId: updated.id,
           actorId: req.user.id,
-        }).catch((err) => console.error('[taskController] Notification error:', err.message));
+        }, req.app.get('io')).catch((err) => console.error('[taskController] Notification error:', err.message));
       }
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`project:${oldTask.projectId}`).emit('task:updated', updated);
     }
 
     return res.status(200).json({
@@ -337,6 +347,11 @@ async function deleteTask(req, res) {
     await prisma.task.delete({
       where: { id: req.task.id },
     });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`project:${req.task.projectId}`).emit('task:deleted', { id: req.task.id, projectId: req.task.projectId });
+    }
 
     return res.status(200).json({
       success: true,

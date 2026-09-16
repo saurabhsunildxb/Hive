@@ -14,7 +14,8 @@ const app = express();
 const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
-initSocket(httpServer);
+const io = initSocket(httpServer);
+app.set('io', io);
 
 // ─── Body Parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());

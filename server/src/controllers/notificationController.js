@@ -9,6 +9,7 @@
  */
 
 const prisma = require('../lib/prisma');
+const { userRoom } = require('../socket');
 
 const SAFE_ACTOR_SELECT = {
   select: {
@@ -104,6 +105,11 @@ async function markAsRead(req, res) {
       },
     });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.to(userRoom(req.user.id)).emit('notification:read', { id: updated.id });
+    }
+
     return res.status(200).json({
       success: true,
       data: { notification: updated },
@@ -125,6 +131,11 @@ async function markAllAsRead(req, res) {
       },
       data: { read: true },
     });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(userRoom(req.user.id)).emit('notification:read-all', { count: result.count });
+    }
 
     return res.status(200).json({
       success: true,

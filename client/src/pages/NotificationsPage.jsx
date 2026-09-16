@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import { useSocket } from '../context/SocketContext';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import ErrorMessage from '../components/ui/ErrorMessage';
@@ -10,6 +11,8 @@ export default function NotificationsPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { socket } = useSocket();
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
@@ -32,6 +35,59 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNotificationNew = (notification) => {
+      setNotifications((prev) => {
+        if (prev.some((n) => n.id === notification.id)) return prev;
+        
+        if (!notification.read) {
+          Promise.resolve().then(() => {
+            setUnreadCount((c) => c + 1);
+          });
+        }
+        
+        return [notification, ...prev].slice(0, 20);
+      });
+    };
+
+    const handleNotificationRead = ({ id }) => {
+      setNotifications((prev) => {
+        let wasUnread = false;
+        const next = prev.map((n) => {
+          if (n.id === id && !n.read) {
+            wasUnread = true;
+            return { ...n, read: true };
+          }
+          return n;
+        });
+
+        if (wasUnread) {
+          Promise.resolve().then(() => {
+            setUnreadCount((c) => Math.max(0, c - 1));
+          });
+        }
+        return next;
+      });
+    };
+
+    const handleNotificationReadAll = () => {
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+    };
+
+    socket.on('notification:new', handleNotificationNew);
+    socket.on('notification:read', handleNotificationRead);
+    socket.on('notification:read-all', handleNotificationReadAll);
+
+    return () => {
+      socket.off('notification:new', handleNotificationNew);
+      socket.off('notification:read', handleNotificationRead);
+      socket.off('notification:read-all', handleNotificationReadAll);
+    };
+  }, [socket]);
+
   const handleMarkAllAsRead = async () => {
     try {
       const response = await api.patch('/notifications/read-all');
@@ -48,10 +104,22 @@ export default function NotificationsPage() {
     try {
       const response = await api.patch(`/notifications/${id}/read`);
       if (response.success) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        setNotifications((prev) => {
+          let wasUnread = false;
+          const next = prev.map((n) => {
+            if (n.id === id && !n.read) {
+              wasUnread = true;
+              return { ...n, read: true };
+            }
+            return n;
+          });
+          if (wasUnread) {
+            Promise.resolve().then(() => {
+              setUnreadCount((c) => Math.max(0, c - 1));
+            });
+          }
+          return next;
+        });
       }
     } catch (err) {
       console.error('[Mark Read Error]', err.message);

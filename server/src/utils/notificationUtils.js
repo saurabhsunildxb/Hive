@@ -6,15 +6,25 @@
 
 const prisma = require('../lib/prisma');
 
+const { userRoom } = require('../socket');
+
+const SAFE_USER_SELECT = {
+  select: {
+    id: true,
+    name: true,
+    email: true,
+  },
+};
+
 /**
  * Create a single notification record.
  */
-async function createNotification({ userId, type, message, taskId = null, actorId = null }, tx = prisma) {
+async function createNotification({ userId, type, message, taskId = null, actorId = null }, io = null, tx = prisma) {
   if (!userId || !type || !message) {
     throw new Error('userId, type, and message are required to create a notification.');
   }
 
-  return tx.notification.create({
+  const notification = await tx.notification.create({
     data: {
       userId,
       type,
@@ -22,7 +32,22 @@ async function createNotification({ userId, type, message, taskId = null, actorI
       taskId: taskId || null,
       actorId: actorId || null,
     },
+    include: {
+      actor: SAFE_USER_SELECT,
+      task: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
+    },
   });
+
+  if (io) {
+    io.to(userRoom(userId)).emit('notification:new', notification);
+  }
+
+  return notification;
 }
 
 /**

@@ -57,8 +57,13 @@ async function createComment(req, res) {
           message: `New comment on task: ${req.task.title}`,
           taskId: req.task.id,
           actorId: req.user.id,
-        }).catch((err) => console.error('[commentController] Notification error:', err.message));
+        }, req.app.get('io')).catch((err) => console.error('[commentController] Notification error:', err.message));
       }
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`project:${req.task.projectId}`).emit('comment:created', comment);
     }
 
     return res.status(201).json({
@@ -147,6 +152,11 @@ async function updateComment(req, res) {
       },
     });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`project:${req.project.id}`).emit('comment:updated', updated);
+    }
+
     return res.status(200).json({
       success: true,
       data: { comment: updated },
@@ -170,20 +180,29 @@ async function deleteComment(req, res) {
     });
   }
 
-  try {
-    await prisma.comment.delete({
-      where: { id: req.comment.id },
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Comment deleted successfully.',
-    });
-  } catch (err) {
-    console.error('[commentController] deleteComment error:', err.message);
-    return res.status(500).json({ success: false, message: 'An unexpected error occurred.' });
+    try {
+      await prisma.comment.delete({
+        where: { id: req.comment.id },
+      });
+  
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`project:${req.project.id}`).emit('comment:deleted', {
+          id: req.comment.id,
+          taskId: req.comment.taskId,
+          projectId: req.project.id,
+        });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        message: 'Comment deleted successfully.',
+      });
+    } catch (err) {
+      console.error('[commentController] deleteComment error:', err.message);
+      return res.status(500).json({ success: false, message: 'An unexpected error occurred.' });
+    }
   }
-}
 
 module.exports = {
   createComment,

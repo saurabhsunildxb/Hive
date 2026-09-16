@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
+import { useSocket } from '../context/SocketContext';
+
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import EmptyState from '../components/ui/EmptyState';
@@ -13,6 +15,11 @@ import ConfirmModal from '../components/modals/ConfirmModal';
 export default function WorkspaceDetailsPage() {
   const { workspaceId } = useParams();
 
+  const {
+    joinWorkspace,
+    leaveWorkspace,
+  } = useSocket();
+
   const [workspace, setWorkspace] = useState(null);
   const [role, setRole] = useState('');
   const [members, setMembers] = useState([]);
@@ -20,9 +27,9 @@ export default function WorkspaceDetailsPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('projects'); // 'projects' | 'members'
 
-  // Modals
+  const [activeTab, setActiveTab] = useState('projects');
+
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState(null);
@@ -33,11 +40,21 @@ export default function WorkspaceDetailsPage() {
   const [projectsError, setProjectsError] = useState('');
   const [membersError, setMembersError] = useState('');
 
+  useEffect(() => {
+    joinWorkspace(workspaceId);
+
+    return () => {
+      leaveWorkspace(workspaceId);
+    };
+  }, [workspaceId, joinWorkspace, leaveWorkspace]);
+
   const fetchWorkspace = useCallback(async () => {
     setLoading(true);
     setError('');
+
     try {
       const wsRes = await api.get(`/workspaces/${workspaceId}`);
+
       if (wsRes.success && wsRes.data) {
         setWorkspace(wsRes.data.workspace);
         setRole(wsRes.data.role);
@@ -53,14 +70,23 @@ export default function WorkspaceDetailsPage() {
   const fetchProjects = useCallback(async () => {
     setProjectsLoading(true);
     setProjectsError('');
+
     try {
-      const projectsRes = await api.get(`/workspaces/${workspaceId}/projects`);
-      if (projectsRes.success && Array.isArray(projectsRes.data?.projects)) {
+      const projectsRes = await api.get(
+        `/workspaces/${workspaceId}/projects`
+      );
+
+      if (
+        projectsRes.success &&
+        Array.isArray(projectsRes.data?.projects)
+      ) {
         setProjects(projectsRes.data.projects);
       }
     } catch (err) {
       console.error('[Projects Load Error]', err.message);
-      setProjectsError(err.message || 'Failed to load projects.');
+      setProjectsError(
+        err.message || 'Failed to load projects.'
+      );
     } finally {
       setProjectsLoading(false);
     }
@@ -69,14 +95,23 @@ export default function WorkspaceDetailsPage() {
   const fetchMembers = useCallback(async () => {
     setMembersLoading(true);
     setMembersError('');
+
     try {
-      const membersRes = await api.get(`/workspaces/${workspaceId}/members`);
-      if (membersRes.success && Array.isArray(membersRes.data)) {
+      const membersRes = await api.get(
+        `/workspaces/${workspaceId}/members`
+      );
+
+      if (
+        membersRes.success &&
+        Array.isArray(membersRes.data)
+      ) {
         setMembers(membersRes.data);
       }
     } catch (err) {
       console.error('[Members Load Error]', err.message);
-      setMembersError(err.message || 'Failed to load workspace members.');
+      setMembersError(
+        err.message || 'Failed to load workspace members.'
+      );
     } finally {
       setMembersLoading(false);
     }
@@ -93,30 +128,53 @@ export default function WorkspaceDetailsPage() {
 
   const handleRoleChange = async (targetUserId, newRole) => {
     try {
-      const response = await api.patch(`/workspaces/${workspaceId}/members/${targetUserId}`, {
-        role: newRole,
-      });
-      if (response.success && response.data?.membership) {
+      const response = await api.patch(
+        `/workspaces/${workspaceId}/members/${targetUserId}`,
+        {
+          role: newRole,
+        }
+      );
+
+      if (
+        response.success &&
+        response.data?.membership
+      ) {
         setMembers((prev) =>
-          prev.map((m) => (m.user?.id === targetUserId ? { ...m, role: newRole } : m))
+          prev.map((m) =>
+            m.user?.id === targetUserId
+              ? { ...m, role: newRole }
+              : m
+          )
         );
       }
     } catch (err) {
-      alert(err.message || 'Failed to update member role.');
+      alert(
+        err.message || 'Failed to update member role.'
+      );
     }
   };
 
   const handleRemoveMember = async () => {
     if (!memberToRemove) return;
+
     setRemoving(true);
+
     try {
-      const response = await api.delete(`/workspaces/${workspaceId}/members/${memberToRemove.user?.id}`);
+      const response = await api.delete(
+        `/workspaces/${workspaceId}/members/${memberToRemove.user?.id}`
+      );
+
       if (response.success) {
-        setMembers((prev) => prev.filter((m) => m.id !== memberToRemove.id));
+        setMembers((prev) =>
+          prev.filter((m) => m.id !== memberToRemove.id)
+        );
+
         setMemberToRemove(null);
       }
     } catch (err) {
-      alert(err.message || 'Failed to remove member.');
+      alert(
+        err.message || 'Failed to remove member.'
+      );
     } finally {
       setRemoving(false);
     }
@@ -133,8 +191,14 @@ export default function WorkspaceDetailsPage() {
   if (error || !workspace) {
     return (
       <div className="space-y-4">
-        <ErrorMessage message={error || 'Workspace not found.'} />
-        <Link to="/workspaces" className="text-sm text-indigo-600 hover:underline">
+        <ErrorMessage
+          message={error || 'Workspace not found.'}
+        />
+
+        <Link
+          to="/workspaces"
+          className="text-sm text-indigo-600 hover:underline"
+        >
           ← Back to Workspaces
         </Link>
       </div>
@@ -143,16 +207,21 @@ export default function WorkspaceDetailsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <span className="w-10 h-10 rounded-xl bg-indigo-600 text-white font-extrabold flex items-center justify-center text-xl shadow-xs">
               {workspace.name.charAt(0).toUpperCase()}
             </span>
+
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{workspace.name}</h1>
-              <p className="text-xs text-slate-400 font-mono">slug: {workspace.slug}</p>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                {workspace.name}
+              </h1>
+
+              <p className="text-xs text-slate-400 font-mono">
+                slug: {workspace.slug}
+              </p>
             </div>
           </div>
         </div>
@@ -164,7 +233,6 @@ export default function WorkspaceDetailsPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="border-b border-slate-200 flex items-center justify-between">
         <div className="flex gap-6">
           <button
@@ -177,6 +245,7 @@ export default function WorkspaceDetailsPage() {
           >
             Projects ({projects.length})
           </button>
+
           <button
             onClick={() => setActiveTab('members')}
             className={`pb-3 text-sm font-semibold transition-colors cursor-pointer relative ${
@@ -191,20 +260,27 @@ export default function WorkspaceDetailsPage() {
 
         <div className="pb-3">
           {activeTab === 'projects' && (
-            <Button variant="primary" size="sm" onClick={() => setShowCreateProject(true)}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowCreateProject(true)}
+            >
               + Create Project
             </Button>
           )}
 
           {activeTab === 'members' && isAdminOrOwner && (
-            <Button variant="primary" size="sm" onClick={() => setShowAddMember(true)}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowAddMember(true)}
+            >
               + Add Member
             </Button>
           )}
         </div>
       </div>
 
-      {/* Projects Tab */}
       {activeTab === 'projects' && (
         <div>
           {projectsLoading ? (
@@ -214,7 +290,12 @@ export default function WorkspaceDetailsPage() {
           ) : projectsError ? (
             <div className="space-y-3">
               <ErrorMessage message={projectsError} />
-              <Button variant="secondary" size="sm" onClick={fetchProjects}>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={fetchProjects}
+              >
                 Retry Loading Projects
               </Button>
             </div>
@@ -223,7 +304,11 @@ export default function WorkspaceDetailsPage() {
               title="No projects in this workspace"
               description="Create a project to start managing tasks and collaborating with your team."
               action={
-                <Button variant="primary" size="sm" onClick={() => setShowCreateProject(true)}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowCreateProject(true)}
+                >
                   Create First Project
                 </Button>
               }
@@ -242,12 +327,24 @@ export default function WorkspaceDetailsPage() {
                         {proj.name}
                       </h3>
                     </div>
-                    <p className="text-xs text-slate-500 line-clamp-2 min-h-[2.5rem]">
-                      {proj.description || <span className="italic text-slate-400">No description</span>}
+
+                    <p className="text-xs text-slate-500 line-clamp-2 min-h-10">
+                      {proj.description || (
+                        <span className="italic text-slate-400">
+                          No description
+                        </span>
+                      )}
                     </p>
                   </div>
+
                   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                    <span>Created {new Date(proj.createdAt).toLocaleDateString()}</span>
+                    <span>
+                      Created{' '}
+                      {new Date(
+                        proj.createdAt
+                      ).toLocaleDateString()}
+                    </span>
+
                     <span className="font-semibold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
                       Open →
                     </span>
@@ -259,7 +356,6 @@ export default function WorkspaceDetailsPage() {
         </div>
       )}
 
-      {/* Members Tab */}
       {activeTab === 'members' && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
           {membersLoading ? (
@@ -269,7 +365,12 @@ export default function WorkspaceDetailsPage() {
           ) : membersError ? (
             <div className="p-6 space-y-3">
               <ErrorMessage message={membersError} />
-              <Button variant="secondary" size="sm" onClick={fetchMembers}>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={fetchMembers}
+              >
                 Retry Loading Members
               </Button>
             </div>
@@ -278,39 +379,83 @@ export default function WorkspaceDetailsPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-xs font-semibold text-slate-500 border-b border-slate-200">
-                    <th className="py-3 px-4">Member</th>
-                    <th className="py-3 px-4">Email</th>
-                    <th className="py-3 px-4">Role</th>
-                    <th className="py-3 px-4">Joined</th>
-                    {(isOwner || isAdminOrOwner) && <th className="py-3 px-4 text-right">Actions</th>}
+                    <th className="py-3 px-4">
+                      Member
+                    </th>
+
+                    <th className="py-3 px-4">
+                      Email
+                    </th>
+
+                    <th className="py-3 px-4">
+                      Role
+                    </th>
+
+                    <th className="py-3 px-4">
+                      Joined
+                    </th>
+
+                    {isAdminOrOwner && (
+                      <th className="py-3 px-4 text-right">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
+
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {members.map((m) => {
-                    const isSelf = m.user?.id === workspace.userId; // owner or self
-                    const canChangeRole = isOwner && m.role !== 'OWNER';
+                    const canChangeRole =
+                      isOwner && m.role !== 'OWNER';
+
                     const canRemove =
-                      (isOwner && m.role !== 'OWNER') ||
-                      (role === 'ADMIN' && m.role === 'MEMBER');
+                      (isOwner &&
+                        m.role !== 'OWNER') ||
+                      (role === 'ADMIN' &&
+                        m.role === 'MEMBER');
 
                     return (
-                      <tr key={m.id} className="hover:bg-slate-50/50">
+                      <tr
+                        key={m.id}
+                        className="hover:bg-slate-50/50"
+                      >
                         <td className="py-3.5 px-4 font-medium text-slate-900 flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 font-bold flex items-center justify-center text-xs">
-                            {m.user?.name ? m.user.name.charAt(0).toUpperCase() : 'U'}
+                            {m.user?.name
+                              ? m.user.name
+                                  .charAt(0)
+                                  .toUpperCase()
+                              : 'U'}
                           </div>
-                          <span>{m.user?.name}</span>
+
+                          <span>
+                            {m.user?.name}
+                          </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600">{m.user?.email}</td>
+
+                        <td className="py-3.5 px-4 text-slate-600">
+                          {m.user?.email}
+                        </td>
+
                         <td className="py-3.5 px-4">
                           {canChangeRole ? (
                             <select
                               value={m.role}
-                              onChange={(e) => handleRoleChange(m.user?.id, e.target.value)}
+                              onChange={(e) =>
+                                handleRoleChange(
+                                  m.user?.id,
+                                  e.target.value
+                                )
+                              }
                               className="text-xs font-semibold py-1 px-2 border border-slate-300 rounded-lg bg-white text-slate-700 focus:ring-2 focus:ring-indigo-500/20"
                             >
-                              <option value="MEMBER">MEMBER</option>
-                              <option value="ADMIN">ADMIN</option>
+                              <option value="MEMBER">
+                                MEMBER
+                              </option>
+
+                              <option value="ADMIN">
+                                ADMIN
+                              </option>
                             </select>
                           ) : (
                             <span
@@ -318,22 +463,29 @@ export default function WorkspaceDetailsPage() {
                                 m.role === 'OWNER'
                                   ? 'bg-amber-50 text-amber-800 border border-amber-200'
                                   : m.role === 'ADMIN'
-                                  ? 'bg-indigo-50 text-indigo-800 border border-indigo-200'
-                                  : 'bg-slate-100 text-slate-700'
+                                    ? 'bg-indigo-50 text-indigo-800 border border-indigo-200'
+                                    : 'bg-slate-100 text-slate-700'
                               }`}
                             >
                               {m.role}
                             </span>
                           )}
                         </td>
+
                         <td className="py-3.5 px-4 text-xs text-slate-500">
-                          {new Date(m.joinedAt || m.createdAt).toLocaleDateString()}
+                          {new Date(
+                            m.joinedAt ||
+                              m.createdAt
+                          ).toLocaleDateString()}
                         </td>
-                        {(isOwner || isAdminOrOwner) && (
+
+                        {isAdminOrOwner && (
                           <td className="py-3.5 px-4 text-right">
                             {canRemove && (
                               <button
-                                onClick={() => setMemberToRemove(m)}
+                                onClick={() =>
+                                  setMemberToRemove(m)
+                                }
                                 className="text-xs font-medium text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2 py-1 rounded transition-colors cursor-pointer"
                               >
                                 Remove
@@ -351,24 +503,39 @@ export default function WorkspaceDetailsPage() {
         </div>
       )}
 
-      {/* Modals */}
       <CreateProjectModal
         isOpen={showCreateProject}
-        onClose={() => setShowCreateProject(false)}
+        onClose={() =>
+          setShowCreateProject(false)
+        }
         workspaceId={workspaceId}
-        onCreated={(newProj) => setProjects((prev) => [newProj, ...prev])}
+        onCreated={(newProj) =>
+          setProjects((prev) => [
+            newProj,
+            ...prev,
+          ])
+        }
       />
 
       <AddMemberModal
         isOpen={showAddMember}
-        onClose={() => setShowAddMember(false)}
+        onClose={() =>
+          setShowAddMember(false)
+        }
         workspaceId={workspaceId}
-        onAdded={(newMem) => setMembers((prev) => [...prev, newMem])}
+        onAdded={(newMem) =>
+          setMembers((prev) => [
+            ...prev,
+            newMem,
+          ])
+        }
       />
 
       <ConfirmModal
         isOpen={Boolean(memberToRemove)}
-        onClose={() => setMemberToRemove(null)}
+        onClose={() =>
+          setMemberToRemove(null)
+        }
         onConfirm={handleRemoveMember}
         title="Remove Workspace Member"
         message={`Are you sure you want to remove ${memberToRemove?.user?.name} (${memberToRemove?.user?.email}) from this workspace?`}

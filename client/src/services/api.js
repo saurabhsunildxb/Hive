@@ -12,7 +12,7 @@ export function registerUnauthorizedCallback(callback) {
 
 async function request(endpoint, options = {}) {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
-  const token = localStorage.getItem('hive_token');
+  const token = sessionStorage.getItem('hive_token');
 
   const headers = {
     'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ async function request(endpoint, options = {}) {
 
     // Handle 401 Unauthorized
     if (response.status === 401) {
-      localStorage.removeItem('hive_token');
+      sessionStorage.removeItem('hive_token');
       if (onUnauthorizedCallback) {
         onUnauthorizedCallback();
       }

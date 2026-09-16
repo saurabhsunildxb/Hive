@@ -5,11 +5,11 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('hive_token'));
+  const [token, setToken] = useState(() => sessionStorage.getItem('hive_token'));
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('hive_token');
+    sessionStorage.removeItem('hive_token');
     setToken(null);
     setUser(null);
   }, []);
@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     async function initAuth() {
-      const storedToken = localStorage.getItem('hive_token');
+      const storedToken = sessionStorage.getItem('hive_token');
       if (!storedToken) {
         setLoading(false);
         return;
@@ -50,7 +50,7 @@ export function AuthProvider({ children }) {
     if (response.success && response.data?.token) {
       const newToken = response.data.token;
       const newUser = response.data.user;
-      localStorage.setItem('hive_token', newToken);
+      sessionStorage.setItem('hive_token', newToken);
       setToken(newToken);
       setUser(newUser);
       return newUser;
@@ -63,7 +63,7 @@ export function AuthProvider({ children }) {
     if (response.success && response.data?.token) {
       const newToken = response.data.token;
       const newUser = response.data.user;
-      localStorage.setItem('hive_token', newToken);
+      sessionStorage.setItem('hive_token', newToken);
       setToken(newToken);
       setUser(newUser);
       return newUser;
