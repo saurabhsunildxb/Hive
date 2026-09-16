@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -115,7 +117,12 @@ export default function AppLayout() {
               }
             >
               {item.icon}
-              <span>{item.name}</span>
+              <span className="flex-1">{item.name}</span>
+              {item.path === '/notifications' && unreadCount > 0 && (
+                <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-rose-500 rounded-full">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

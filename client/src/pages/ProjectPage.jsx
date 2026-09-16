@@ -62,6 +62,8 @@ export default function ProjectPage() {
     if (!socket) return;
 
     const handleTaskCreated = (newTask) => {
+      if (newTask.projectId !== projectId) return;
+
       setTasks((prev) => {
         if (prev.some((t) => t.id === newTask.id)) {
           return prev;
@@ -97,15 +99,14 @@ export default function ProjectPage() {
         if (prev?.id === id) return null;
         return prev;
       });
+
+      setTaskToEdit((prev) => {
+        if (prev?.id === id) return null;
+        return prev;
+      });
     };
 
-    socket.on('task:created', (newTask) => {
-      setTasks((prev) =>
-        prev.some((task) => task.id === newTask.id)
-          ? prev
-          : [newTask, ...prev]
-      );
-    });
+    socket.on('task:created', handleTaskCreated);
     socket.on('task:updated', handleTaskUpdated);
     socket.on('task:deleted', handleTaskDeleted);
 
@@ -132,7 +133,7 @@ export default function ProjectPage() {
     socket.on('comment:deleted', handleCommentDeleted);
 
     return () => {
-      socket.off('task:created');
+      socket.off('task:created', handleTaskCreated);
       socket.off('task:updated', handleTaskUpdated);
       socket.off('task:deleted', handleTaskDeleted);
 

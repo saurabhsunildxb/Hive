@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { useSocket } from '../context/SocketContext';
+import { useNotifications } from '../context/NotificationContext';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import ErrorMessage from '../components/ui/ErrorMessage';
@@ -8,11 +9,11 @@ import Button from '../components/ui/Button';
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const { socket } = useSocket();
+  const { unreadCount, refreshUnreadCount } = useNotifications();
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
@@ -21,7 +22,7 @@ export default function NotificationsPage() {
       const response = await api.get('/notifications');
       if (response.success && response.data) {
         setNotifications(response.data.notifications || []);
-        setUnreadCount(response.data.unreadCount || 0);
+        refreshUnreadCount();
       }
     } catch (err) {
       console.error('[Notifications Fetch Error]', err.message);
@@ -29,7 +30,7 @@ export default function NotificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshUnreadCount]);
 
   useEffect(() => {
     fetchNotifications();
@@ -41,40 +42,18 @@ export default function NotificationsPage() {
     const handleNotificationNew = (notification) => {
       setNotifications((prev) => {
         if (prev.some((n) => n.id === notification.id)) return prev;
-        
-        if (!notification.read) {
-          Promise.resolve().then(() => {
-            setUnreadCount((c) => c + 1);
-          });
-        }
-        
         return [notification, ...prev].slice(0, 20);
       });
     };
 
     const handleNotificationRead = ({ id }) => {
-      setNotifications((prev) => {
-        let wasUnread = false;
-        const next = prev.map((n) => {
-          if (n.id === id && !n.read) {
-            wasUnread = true;
-            return { ...n, read: true };
-          }
-          return n;
-        });
-
-        if (wasUnread) {
-          Promise.resolve().then(() => {
-            setUnreadCount((c) => Math.max(0, c - 1));
-          });
-        }
-        return next;
-      });
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      );
     };
 
     const handleNotificationReadAll = () => {
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
     };
 
     socket.on('notification:new', handleNotificationNew);
@@ -93,7 +72,7 @@ export default function NotificationsPage() {
       const response = await api.patch('/notifications/read-all');
       if (response.success) {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setUnreadCount(0);
+        refreshUnreadCount();
       }
     } catch (err) {
       console.error('[Mark All Read Error]', err.message);
@@ -104,22 +83,10 @@ export default function NotificationsPage() {
     try {
       const response = await api.patch(`/notifications/${id}/read`);
       if (response.success) {
-        setNotifications((prev) => {
-          let wasUnread = false;
-          const next = prev.map((n) => {
-            if (n.id === id && !n.read) {
-              wasUnread = true;
-              return { ...n, read: true };
-            }
-            return n;
-          });
-          if (wasUnread) {
-            Promise.resolve().then(() => {
-              setUnreadCount((c) => Math.max(0, c - 1));
-            });
-          }
-          return next;
-        });
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+        );
+        refreshUnreadCount();
       }
     } catch (err) {
       console.error('[Mark Read Error]', err.message);
