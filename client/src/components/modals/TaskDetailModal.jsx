@@ -232,7 +232,7 @@ export default function TaskDetailModal({
           {/* Description */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Description</h4>
-            <p className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-3.5 rounded-lg border border-slate-200 min-h-[4rem]">
+            <p className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-3.5 rounded-lg border border-slate-200 min-h-16">
               {task.description || <span className="italic text-slate-400">No description provided.</span>}
             </p>
           </div>
@@ -297,7 +297,7 @@ export default function TaskDetailModal({
             ) : commentsError ? (
               <ErrorMessage message={commentsError} />
             ) : (
-              <div className="space-y-4 mb-4 max-h-[300px] overflow-y-auto pr-2">
+              <div className="space-y-4 mb-4 max-h-75 overflow-y-auto pr-2">
                 {comments.length === 0 ? (
                   <p className="text-sm text-slate-500 italic">No comments yet. Be the first to comment!</p>
                 ) : (
